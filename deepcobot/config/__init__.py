@@ -24,6 +24,7 @@ from deepcobot.config.loader import (
     get_default_config_path,
     ensure_config_dir,
     create_default_config,
+    _expand_env_vars,
 )
 
 __all__ = [
@@ -50,4 +51,5 @@ __all__ = [
     "get_default_config_path",
     "ensure_config_dir",
     "create_default_config",
+    "_expand_env_vars",
 ]

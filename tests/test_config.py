@@ -68,6 +68,51 @@ class TestExpandEnvVars:
         result = _expand_env_vars(["${USER1}", "${USER2}", "static"])
         assert result == ["alice", "bob", "static"]
 
+    def test_disabled_config_skip_expansion(self):
+        """测试 enabled=false 的配置块跳过环境变量展开"""
+        # 这个配置块中包含未定义的环境变量，但因为 enabled=false，应该不会报错
+        config = {
+            "channels": {
+                "feishu": {
+                    "enabled": False,
+                    "app_id": "${FEISHU_APP_ID}",
+                    "app_secret": "${FEISHU_APP_SECRET}",
+                },
+                "discord": {
+                    "enabled": False,
+                    "token": "${DISCORD_TOKEN}",
+                }
+            }
+        }
+
+        # 所有 channel 都是 disabled 的，所以不应该展开环境变量
+        result = _expand_env_vars(config)
+
+        # feishu 配置应该保留原始字符串，不展开
+        assert result["channels"]["feishu"]["app_id"] == "${FEISHU_APP_ID}"
+        assert result["channels"]["feishu"]["app_secret"] == "${FEISHU_APP_SECRET}"
+        assert result["channels"]["feishu"]["enabled"] is False
+
+        # discord 配置也应该保留原始字符串
+        assert result["channels"]["discord"]["token"] == "${DISCORD_TOKEN}"
+        assert result["channels"]["discord"]["enabled"] is False
+
+    def test_enabled_config_expands_vars(self, monkeypatch):
+        """测试 enabled=true 的配置块正常展开环境变量"""
+        monkeypatch.setenv("TELEGRAM_TOKEN", "test-token-123")
+
+        config = {
+            "channels": {
+                "telegram": {
+                    "enabled": True,
+                    "token": "${TELEGRAM_TOKEN}",
+                }
+            }
+        }
+
+        result = _expand_env_vars(config)
+        assert result["channels"]["telegram"]["token"] == "test-token-123"
+
 
 class TestConfigSchema:
     """配置 Schema 测试"""
@@ -76,7 +121,9 @@ class TestConfigSchema:
         """测试默认值"""
         config = Config()
 
-        assert config.agent.workspace == Path("~/.deepcobot/workspace")
+        # 默认值应该被正确展开到用户主目录
+        expected_workspace = Path("~/.deepcobot/workspace").expanduser()
+        assert config.agent.workspace == expected_workspace
         assert config.agent.model == "anthropic:claude-sonnet-4-6"
         assert config.agent.max_tokens == 8192
         assert config.agent.enable_memory is True

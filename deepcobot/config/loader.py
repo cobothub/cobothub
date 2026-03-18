@@ -44,7 +44,7 @@ def apply_langsmith_config(config: Config) -> None:
     )
 
 
-def _expand_env_vars(value: Any) -> Any:
+def _expand_env_vars(value: Any, skip_expansion: bool = False) -> Any:
     """
     递归替换配置值中的环境变量。
 
@@ -52,6 +52,7 @@ def _expand_env_vars(value: Any) -> Any:
 
     Args:
         value: 配置值（可以是字符串、字典、列表等）
+        skip_expansion: 是否跳过环境变量展开（用于 enabled=false 的配置块）
 
     Returns:
         替换后的配置值
@@ -60,6 +61,10 @@ def _expand_env_vars(value: Any) -> Any:
         ValueError: 环境变量未定义且无默认值
     """
     if isinstance(value, str):
+        # 跳过 enabled=false 配置块中的环境变量展开
+        if skip_expansion:
+            return value
+
         # 匹配 ${VAR} 或 ${VAR:-default}
         pattern = r"\$\{([^}]+)\}"
 
@@ -85,10 +90,14 @@ def _expand_env_vars(value: Any) -> Any:
         return re.sub(pattern, replace_env, value)
 
     elif isinstance(value, dict):
-        return {k: _expand_env_vars(v) for k, v in value.items()}
+        # 检查是否是 disabled 配置块
+        if value.get("enabled") is False:
+            # 跳过此块的环境变量展开
+            return {k: _expand_env_vars(v, skip_expansion=True) for k, v in value.items()}
+        return {k: _expand_env_vars(v, skip_expansion) for k, v in value.items()}
 
     elif isinstance(value, list):
-        return [_expand_env_vars(item) for item in value]
+        return [_expand_env_vars(item, skip_expansion) for item in value]
 
     return value
 

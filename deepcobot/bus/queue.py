@@ -73,7 +73,7 @@ class MessageBus:
             msg: 入站消息
         """
         await self.inbound.put(msg)
-        logger.debug(f"MessageBus: inbound message from {msg.channel}")
+        logger.info(f"MessageBus: inbound message from {msg.channel} (queue size: {self.inbound.qsize()})")
 
     async def consume_inbound(self) -> InboundMessage:
         """
@@ -116,6 +116,9 @@ class MessageBus:
             self._loop.call_soon_threadsafe(
                 lambda: asyncio.create_task(self.publish_inbound(msg))
             )
+            logger.debug(f"MessageBus: threadsafe inbound message from {msg.channel}")
+        else:
+            logger.warning("MessageBus: cannot publish threadsafe - event loop not set")
 
     def publish_outbound_threadsafe(self, msg: OutboundMessage) -> None:
         """

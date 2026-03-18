@@ -256,6 +256,7 @@ class ChannelManager:
                     self.bus.consume_inbound(),
                     timeout=1.0,
                 )
+                logger.info(f"Consuming inbound message from {msg.channel}")
 
                 # 异步调用 Agent 处理消息
                 asyncio.create_task(self._process_message(msg))
@@ -274,6 +275,7 @@ class ChannelManager:
         Args:
             msg: 入站消息
         """
+        logger.info(f"Processing message from {msg.channel}: {msg.content[:50]}...")
         channel = self.channels.get(msg.channel)
         if not channel:
             logger.warning(f"Unknown channel: {msg.channel}")
@@ -284,11 +286,15 @@ class ChannelManager:
             await channel.send_progress(msg.chat_id, "Thinking...")
 
             # 调用 Agent 处理
+            logger.info(f"Calling agent handler for message from {msg.channel}")
             response = await self.agent_handler(msg)
 
             # 发送响应
             if response:
+                logger.info(f"Publishing outbound response to {msg.channel}")
                 await self.bus.publish_outbound(response)
+            else:
+                logger.warning(f"No response from agent for message from {msg.channel}")
 
         except Exception as e:
             logger.error(f"Error processing message: {e}")

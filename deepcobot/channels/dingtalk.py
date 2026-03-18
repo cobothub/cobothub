@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from deepcobot.channels.base import BaseChannel
-from deepcobot.channels.events import OutboundMessage
+from deepcobot.channels.events import InboundMessage, OutboundMessage
 
 if TYPE_CHECKING:
     from deepcobot.bus.queue import MessageBus
@@ -167,20 +167,24 @@ class DingTalkChannel(BaseChannel):
                         content,
                     )
 
-                    # 异步处理消息，避免阻塞
-                    task = asyncio.create_task(
-                        self.channel._handle_message(
-                            sender_id=sender_id,
-                            chat_id=chat_id,
-                            content=content,
-                            metadata={
-                                "sender_name": sender_name,
-                                "conversation_type": conversation_type,
-                            },
-                        )
+                    # 构建入站消息
+                    inbound_msg = InboundMessage(
+                        channel=self.channel.name,
+                        sender_id=str(sender_id),
+                        chat_id=str(chat_id),
+                        content=content,
+                        media_urls=[],
+                        metadata={
+                            "sender_name": sender_name,
+                            "conversation_type": conversation_type,
+                        },
                     )
-                    self.channel._background_tasks.add(task)
-                    task.add_done_callback(self.channel._background_tasks.discard)
+
+                    # 使用 threadsafe 方法发布消息到主事件循环
+                    # 因为钉钉 Stream 运行在独立线程中，有自己的事件循环
+                    logger.info("Publishing DingTalk message to bus (threadsafe)...")
+                    self.channel.bus.publish_inbound_threadsafe(inbound_msg)
+                    logger.info("DingTalk message published to bus")
 
                     return _AckMessage.STATUS_OK, "OK"
 
@@ -325,7 +329,7 @@ class DingTalkChannel(BaseChannel):
 
         try:
             # 获取 access_token
-            token = await self._client.get_access_token()
+            token = self._client.get_access_token()
             if not token:
                 logger.error("Failed to get DingTalk access token")
                 return

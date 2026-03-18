@@ -869,6 +869,9 @@ async def _run_bot(cfg, lang: Language) -> None:
     # 启动消息总线
     await bus.start()
 
+    # 设置管理器运行标志
+    manager._running = True
+
     # 启动出站消息分发器
     manager._dispatch_task = asyncio.create_task(manager._dispatch_outbound())
 

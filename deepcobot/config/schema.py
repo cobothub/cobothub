@@ -6,7 +6,7 @@
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # 支持的语言
 Language = Literal["en", "zh"]
@@ -115,6 +115,13 @@ class AgentDefaults(BaseModel):
             v = Path(v)
         return v.expanduser()
 
+    @model_validator(mode="after")
+    def expand_defaults(self) -> "AgentDefaults":
+        """确保默认值中的路径也被展开"""
+        if not self.workspace.is_absolute():
+            self.workspace = self.workspace.expanduser()
+        return self
+
 
 class AsyncSubAgentConfig(BaseModel):
     """异步子 Agent 配置"""
@@ -155,6 +162,13 @@ class CronConfig(BaseModel):
         if isinstance(v, str):
             v = Path(v)
         return v.expanduser()
+
+    @model_validator(mode="after")
+    def expand_defaults(self) -> "CronConfig":
+        """确保默认值中的路径也被展开"""
+        if not self.store_path.is_absolute():
+            self.store_path = self.store_path.expanduser()
+        return self
 
 
 class ServicesConfig(BaseModel):
