@@ -3,15 +3,15 @@
 异步消息队列，解耦消息渠道和 Agent 核心。
 """
 
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
 if TYPE_CHECKING:
-    pass
-
-from deepcobot.channels.events import InboundMessage, OutboundMessage
+    from deepcobot.channels.events import InboundMessage, OutboundMessage
 
 
 class MessageBus:
@@ -146,7 +146,7 @@ class MessageBus:
         """消息总线是否运行中"""
         return self._running
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, Any]:
         """
         获取统计信息。
 

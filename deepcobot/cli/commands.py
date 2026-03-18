@@ -148,8 +148,124 @@ def run_cmd(
 
 async def _run_session(cfg, thread_id: str, lang: Language) -> None:
     """Run interactive session."""
+    from rich.status import Status
+    from rich.live import Live
+
     session = AgentSession(cfg)
     session.set_thread_id(thread_id)
+
+    # 当前状态跟踪
+    current_status: Status | None = None
+    status_live: Live | None = None
+
+    # 设置审批回调
+    async def approval_callback(action_requests: list[dict]) -> list[dict]:
+        """处理审批请求的回调函数"""
+        return await _handle_approval(action_requests, lang)
+
+    session.set_approval_callback(approval_callback)
+
+    # 工具名称的友好显示映射
+    tool_display_names = {
+        "execute": "执行命令",
+        "read_file": "读取文件",
+        "write_file": "写入文件",
+        "edit_file": "编辑文件",
+        "glob": "搜索文件",
+        "grep": "搜索内容",
+        "web_search": "网页搜索",
+        "task": "调用子任务",
+        "write_todos": "更新任务列表",
+        "ls": "列出目录",
+    }
+
+    # 设置事件回调，用于显示执行进度
+    async def event_callback(event: dict) -> None:
+        """处理流式事件的回调函数"""
+        nonlocal current_status, status_live
+
+        event_type = event.get("event")
+        event_name = event.get("name", "")
+        event_data = event.get("data", {})
+
+        # 工具调用开始
+        if event_type == "on_tool_start":
+            tool_name = event_name
+            tool_input = event_data.get("input", {})
+
+            # 获取友好的工具显示名称
+            display_name = tool_display_names.get(tool_name, tool_name)
+            status_msg = f"[bold yellow]⏳[/bold yellow] {display_name}"
+
+            # 根据工具类型显示不同的参数预览
+            if isinstance(tool_input, dict):
+                preview_parts = []
+                # 针对不同工具显示不同的关键参数
+                if tool_name == "execute" and "command" in tool_input:
+                    cmd = str(tool_input["command"])[:40]
+                    if len(str(tool_input["command"])) > 40:
+                        cmd += "..."
+                    preview_parts.append(cmd)
+                elif tool_name in ("read_file", "write_file", "edit_file") and "file_path" in tool_input:
+                    preview_parts.append(str(tool_input["file_path"]))
+                elif tool_name == "glob" and "pattern" in tool_input:
+                    preview_parts.append(str(tool_input["pattern"]))
+                elif tool_name == "grep" and "pattern" in tool_input:
+                    preview_parts.append(str(tool_input["pattern"]))
+                elif tool_name == "web_search" and "query" in tool_input:
+                    query = str(tool_input["query"])[:30]
+                    if len(str(tool_input["query"])) > 30:
+                        query += "..."
+                    preview_parts.append(query)
+                elif tool_name == "task" and "name" in tool_input:
+                    preview_parts.append(str(tool_input["name"]))
+
+                if preview_parts:
+                    status_msg += f" [dim]{preview_parts[0]}[/dim]"
+
+            if status_live:
+                status_live.stop()
+
+            current_status = console.status(status_msg, spinner="dots")
+            status_live = Live(current_status, console=console, refresh_per_second=4)
+            status_live.start()
+
+        # 工具调用结束
+        elif event_type == "on_tool_end":
+            if status_live:
+                status_live.stop()
+                status_live = None
+
+        # LLM 调用开始
+        elif event_type == "on_llm_start":
+            if status_live:
+                status_live.stop()
+
+            thinking_text = t("progress.thinking", lang)
+            current_status = console.status(f"[cyan]{thinking_text}[/cyan]", spinner="dots")
+            status_live = Live(current_status, console=console, refresh_per_second=4)
+            status_live.start()
+
+        # LLM 流式输出
+        elif event_type == "on_llm_stream":
+            # LLM 开始输出，停止状态显示
+            if status_live:
+                status_live.stop()
+                status_live = None
+
+        # LLM 调用结束
+        elif event_type == "on_llm_end":
+            if status_live:
+                status_live.stop()
+                status_live = None
+
+        # 链结束
+        elif event_type == "on_chain_end":
+            if status_live:
+                status_live.stop()
+                status_live = None
+
+    session.set_event_callback(event_callback)
 
     console.print(f"[dim]{t('run.prompt_input', lang)}[/dim]")
     console.print(f"[dim]{t('run.prompt_reset', lang)}[/dim]\n")
@@ -170,8 +286,6 @@ async def _run_session(cfg, thread_id: str, lang: Language) -> None:
                 console.print(f"[green]{t('run.history_cleared', lang)}[/green]")
                 continue
 
-            console.print(f"[dim]{t('run.thinking', lang)}[/dim]")
-
             try:
                 response = await session.invoke(user_input)
 
@@ -183,12 +297,129 @@ async def _run_session(cfg, thread_id: str, lang: Language) -> None:
 
             except Exception as e:
                 logger.error(f"Agent error: {e}")
+                if status_live:
+                    status_live.stop()
+                    status_live = None
                 console.print(f"[red]{t('run.error', lang)}[/red] {e}")
 
         except KeyboardInterrupt:
+            if status_live:
+                status_live.stop()
+                status_live = None
             console.print(f"\n[yellow]{t('run.use_exit', lang)}[/yellow]")
         except EOFError:
             break
+
+
+async def _handle_approval(action_requests: list[dict], lang: Language) -> list[dict]:
+    """处理审批请求
+
+    Args:
+        action_requests: 待审批的工具调用列表
+        lang: 语言设置
+
+    Returns:
+        用户的决策列表
+    """
+    import json
+    from rich.table import Table
+
+    decisions = []
+
+    # 显示待审批的工具调用
+    console.print()
+    console.print(f"[bold yellow]{t('approval.title', lang)}[/bold yellow]")
+    console.print(f"[dim]{len(action_requests)} {t('approval.multiple_tools', lang)}[/dim]\n")
+
+    # 如果有多个工具，询问是否全部批准
+    if len(action_requests) > 1:
+        approve_all = Prompt.ask(
+            f"[bold]{t('approval.approve_all', lang)}[/bold]",
+            default="Y",
+        )
+        if approve_all.lower() in ("y", "yes", ""):
+            for req in action_requests:
+                decisions.append({"type": "approve"})
+            console.print(f"[green]{t('approval.approved', lang)} ({len(action_requests)})[/green]\n")
+            return decisions
+
+    # 逐个审批
+    for i, req in enumerate(action_requests, 1):
+        tool_name = req.get("name", "unknown")
+        tool_args = req.get("args", {})
+        description = req.get("description", "")
+
+        # 显示工具详情
+        table = Table(show_header=True, header_style="bold cyan")
+        table.add_column("Field", style="dim")
+        table.add_column("Value")
+        table.add_row(t("approval.tool", lang), f"[bold]{tool_name}[/bold]")
+
+        # 格式化参数
+        args_str = json.dumps(tool_args, indent=2, ensure_ascii=False)
+        table.add_row(t("approval.args", lang), args_str)
+
+        if description:
+            table.add_row(t("approval.description", lang), description)
+
+        console.print(table)
+
+        # 获取用户决策
+        while True:
+            choice = Prompt.ask(
+                f"\n[bold]{t('approval.prompt', lang)}[/bold]",
+                default="y",
+            ).lower().strip()
+
+            if choice in ("y", "yes"):
+                decisions.append({"type": "approve"})
+                console.print(f"[green]{t('approval.approved', lang)}[/green]\n")
+                break
+            elif choice in ("n", "no"):
+                decisions.append({"type": "reject"})
+                console.print(f"[red]{t('approval.rejected', lang)}[/red]\n")
+                break
+            elif choice == "e":
+                # 编辑模式
+                new_name = Prompt.ask(
+                    f"[bold]{t('approval.edit_prompt', lang)}[/bold]",
+                    default=tool_name,
+                )
+                new_args_str = Prompt.ask(
+                    f"[bold]{t('approval.edit_args_prompt', lang)}[/bold]",
+                    default=json.dumps(tool_args, ensure_ascii=False),
+                )
+                try:
+                    new_args = json.loads(new_args_str)
+                except json.JSONDecodeError:
+                    console.print(f"[yellow]{t('approval.edit_args_invalid', lang)}[/yellow]")
+                    new_args = tool_args
+
+                decisions.append({
+                    "type": "edit",
+                    "edited_action": {
+                        "name": new_name,
+                        "args": new_args,
+                    }
+                })
+                console.print(f"[green]{t('approval.approved', lang)} (edited)[/green]\n")
+                break
+            elif choice == "r":
+                # 拒绝并留言
+                reject_msg = Prompt.ask(
+                    f"[bold]{t('approval.reject_message_prompt', lang)}[/bold]",
+                    default="",
+                )
+                decision = {"type": "reject"}
+                if reject_msg.strip():
+                    decision["message"] = reject_msg
+                decisions.append(decision)
+                console.print(f"[red]{t('approval.rejected', lang)}[/red]\n")
+                break
+            else:
+                console.print(f"[yellow]{t('approval.invalid_choice', lang)}[/yellow]")
+
+    return decisions
 
 
 @app.command("config")
@@ -247,6 +478,11 @@ def serve_cmd(
         "-p",
         help="Port",
     ),
+    allow_blocking: bool = typer.Option(
+        True,
+        "--allow-blocking/--no-allow-blocking",
+        help="Allow blocking calls (for development)",
+    ),
 ) -> None:
     """Start LangGraph server."""
     lang = _setup_language(config)
@@ -273,11 +509,17 @@ def serve_cmd(
         console.print(f"[yellow]{t('serve.starting', lang)}[/yellow]")
         console.print(f"[dim]{t('serve.ctrlc', lang)}[/dim]\n")
 
-        subprocess.run([
+        cmd = [
             "langgraph", "dev",
             "--host", host,
             "--port", str(port),
-        ])
+        ]
+
+        # 开发模式下允许阻塞调用
+        if allow_blocking:
+            cmd.append("--allow-blocking")
+
+        subprocess.run(cmd)
 
     except FileNotFoundError:
         console.print(f"[red]{t('serve.not_found', lang)}[/red]")
@@ -491,6 +733,168 @@ def cron_run_cmd(
             raise typer.Exit(1)
 
     asyncio.run(run())
+
+
+@app.command("bot")
+def bot_cmd(
+    config: Optional[Path] = typer.Option(
+        None,
+        "--config",
+        "-c",
+        help="Config file",
+    ),
+) -> None:
+    """Start bot channels (Telegram, Discord, Feishu, DingTalk, etc.)."""
+    lang = _setup_language(config)
+
+    try:
+        cfg = load_config(config)
+
+        console.print(Panel.fit(
+            f"[bold green]DeepCoBot[/bold green] v{__version__}\n"
+            f"Model: {cfg.agent.model}\n"
+            f"Workspace: {cfg.agent.workspace}",
+            title=t("welcome.title", lang),
+        ))
+
+        asyncio.run(_run_bot(cfg, lang))
+
+    except FileNotFoundError as e:
+        console.print(f"[red]{t('error.config', lang)}[/red] {e}")
+        raise typer.Exit(1)
+    except ValueError as e:
+        console.print(f"[red]{t('error.config', lang)}[/red] {e}")
+        raise typer.Exit(1)
+    except KeyboardInterrupt:
+        console.print(f"\n[yellow]{t('bot.stopped', lang)}[/yellow]")
+        raise typer.Exit(0)
+
+
+async def _run_bot(cfg, lang: Language) -> None:
+    """Run bot channels."""
+    from deepcobot.agent.core import _create_agent_async
+    from deepcobot.bus.queue import MessageBus
+    from deepcobot.channels import ChannelManager, InboundMessage, OutboundMessage
+
+    # 创建 Agent
+    resources = await _create_agent_async(cfg)
+    graph = resources["graph"]
+
+    # 创建消息总线
+    bus = MessageBus()
+
+    # Agent 消息处理函数
+    async def agent_handler(msg: InboundMessage) -> OutboundMessage | None:
+        """处理入站消息并返回响应"""
+        thread_config = {
+            "configurable": {
+                "thread_id": msg.chat_id,
+            }
+        }
+
+        try:
+            result = await graph.ainvoke(
+                {"messages": [{"role": "user", "content": msg.content}]},
+                config=thread_config,
+            )
+
+            # 提取最后一条助手消息
+            content = ""
+            if "messages" in result:
+                for m in reversed(result["messages"]):
+                    msg_type = type(m).__name__
+                    if msg_type == "AIMessage":
+                        content = m.content
+                        if isinstance(content, list):
+                            texts = []
+                            for item in content:
+                                if isinstance(item, dict) and item.get("type") == "text":
+                                    texts.append(item.get("text", ""))
+                            content = "\n".join(texts) if texts else ""
+                        content = str(content) if content else ""
+                        break
+                    elif isinstance(m, dict) and m.get("role") == "assistant":
+                        content = m.get("content", "") or ""
+                        break
+
+            if content:
+                return OutboundMessage(
+                    channel=msg.channel,
+                    chat_id=msg.chat_id,
+                    content=content,
+                )
+
+        except Exception as e:
+            logger.error(f"Agent error: {e}")
+            return OutboundMessage(
+                channel=msg.channel,
+                chat_id=msg.chat_id,
+                content=f"Error: {e}",
+            )
+
+        return None
+
+    # 创建渠道管理器（不包含 CLI 渠道）
+    manager = ChannelManager(cfg, bus, agent_handler, include_cli=False)
+
+    # 检查是否有渠道启用
+    if not manager.channels:
+        console.print(f"[yellow]{t('bot.no_channels', lang)}[/yellow]")
+        return
+
+    # 显示渠道状态
+    console.print(f"\n[bold]{t('bot.starting', lang)}[/bold]")
+    for name, channel in manager.channels.items():
+        console.print(f"  • {name}")
+
+    # 设置信号处理
+    loop = asyncio.get_event_loop()
+    stop_event = asyncio.Event()
+    channel_tasks: list[asyncio.Task] = []
+
+    def signal_handler():
+        console.print(f"\n[yellow]{t('bot.stopping', lang)}[/yellow]")
+        # 先停止渠道，让 DingTalk 的无限循环退出
+        for name, channel in manager.channels.items():
+            channel._running = False
+        stop_event.set()
+
+    try:
+        loop.add_signal_handler(signal.SIGINT, signal_handler)
+        loop.add_signal_handler(signal.SIGTERM, signal_handler)
+    except NotImplementedError:
+        # Windows 不支持 add_signal_handler
+        pass
+
+    # 启动消息总线
+    await bus.start()
+
+    # 启动出站消息分发器
+    manager._dispatch_task = asyncio.create_task(manager._dispatch_outbound())
+
+    # 启动入站消息消费者
+    manager._consumer_task = asyncio.create_task(manager._consume_inbound())
+
+    # 后台启动所有渠道
+    for name, channel in manager.channels.items():
+        task = asyncio.create_task(manager._start_channel(name, channel))
+        channel_tasks.append(task)
+
+    console.print(f"[dim]{t('serve.ctrlc', lang)}[/dim]")
+
+    # 等待停止信号
+    await stop_event.wait()
+
+    # 取消渠道任务
+    for task in channel_tasks:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    # 停止渠道
+    await manager.stop_all()
 
 
 @app.command("version")

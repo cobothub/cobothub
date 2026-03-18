@@ -20,6 +20,30 @@ else:
 from deepcobot.config.schema import Config
 
 
+def apply_langsmith_config(config: Config) -> None:
+    """
+    应用 LangSmith 配置到环境变量。
+
+    Args:
+        config: 配置对象
+    """
+    if not config.langsmith.enabled:
+        return
+
+    if config.langsmith.api_key:
+        os.environ["LANGCHAIN_API_KEY"] = config.langsmith.api_key
+
+    # 启用 LangSmith tracing
+    os.environ["LANGCHAIN_TRACING_V2"] = "true"
+
+    if config.langsmith.project:
+        os.environ["LANGCHAIN_PROJECT"] = config.langsmith.project
+
+    logger.info(
+        f"LangSmith tracing enabled: project={config.langsmith.project or 'default'}"
+    )
+
+
 def _expand_env_vars(value: Any) -> Any:
     """
     递归替换配置值中的环境变量。
@@ -167,6 +191,9 @@ def _load_config_from_file(config_path: Path) -> Config:
         f"Config loaded: model={config.agent.model}, "
         f"workspace={config.agent.workspace}"
     )
+
+    # 应用 LangSmith 配置
+    apply_langsmith_config(config)
 
     return config
 

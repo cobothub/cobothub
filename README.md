@@ -18,6 +18,7 @@ A minimalist personal AI assistant framework built on [DeepAgents](https://githu
 - **Multi-Channel Support**: CLI, Telegram, Discord, Feishu, DingTalk, Web API
 - **DeepAgents Integration**: Built-in memory system, skills system, tool approval
 - **LangGraph Compatible**: Support for LangGraph server deployment
+- **DeepAgents UI**: Support integration with deepagents-ui web interface for real-time chat, thread management, and file visualization
 - **Observability**: Built-in health checks, Prometheus metrics, structured logging
 
 ## Quick Start
@@ -97,9 +98,70 @@ deepcobot run
 # Specify configuration file
 deepcobot run --config /path/to/config.toml
 
+# Start bot channels (Telegram, Discord, Feishu, DingTalk, etc.)
+deepcobot bot
+
 # Start LangGraph server
 deepcobot serve --port 8123
 ```
+
+### Using DeepAgents UI
+
+DeepCoBot supports integration with [deepagents-ui](https://github.com/langchain-ai/deep-agents-ui), a web-based interface for interacting with your AI assistant.
+
+**Install DeepAgents UI**
+
+```bash
+# Clone the repository
+git clone https://github.com/langchain-ai/deep-agents-ui.git
+cd deep-agents-ui
+
+# Install dependencies
+yarn install
+```
+
+**Running with UI**
+
+1. Start the LangGraph server:
+
+```bash
+deepcobot serve --port 8123
+```
+
+You will see output like:
+```
+╦  ┌─┐┌┐┌┌─┐╔═╗┬─┐┌─┐┌─┐┬ ┬
+║  ├─┤││││ ┬║ ╦├┬┘├─┤├─┘├─┤
+╩═╝┴ ┴┘└┘└─┘╚═╝┴└─┴ ┴┴  ┴ ┴
+
+- 🚀 API: http://127.0.0.1:8123
+- 🎨 Studio UI: https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:8123
+- 📚 API Docs: http://127.0.0.1:8123/docs
+```
+
+The Studio UI link allows you to connect to [LangGraph Studio](https://studio.langchain.com/) (LangSmith cloud service) for tracing and debugging. This is optional - you can use DeepAgents UI locally without LangSmith.
+
+2. Start the DeepAgents UI:
+
+```bash
+cd deep-agents-ui
+yarn dev
+```
+
+3. Open your browser at [http://localhost:3000](http://localhost:3000)
+
+4. Configure the connection in the UI:
+   - **Deployment URL**: `http://127.0.0.1:8123` (or your server address)
+   - **Assistant ID**: `agent` (defined in `langgraph.json`)
+
+**Features**
+
+- Real-time chat interface with streaming responses
+- Thread management for conversation history
+- File visualization from agent state
+- Tool call inspection and approval
+- Debug mode for step-by-step execution
+- Dark/Light theme support
 
 ## Usage Examples
 
@@ -130,7 +192,27 @@ Run:
 
 ```bash
 export TELEGRAM_BOT_TOKEN="your-bot-token"
-deepcobot run
+deepcobot bot
+```
+
+### DingTalk Bot
+
+Configure `~/.deepcobot/config.toml`:
+
+```toml
+[channels.dingtalk]
+enabled = true
+client_id = "${DINGTALK_CLIENT_ID}"
+client_secret = "${DINGTALK_CLIENT_SECRET}"
+allowed_users = []
+```
+
+Run:
+
+```bash
+export DINGTALK_CLIENT_ID="your-client-id"
+export DINGTALK_CLIENT_SECRET="your-client-secret"
+deepcobot bot
 ```
 
 ### Web API
@@ -167,12 +249,36 @@ curl -X POST http://localhost:8080/chat \
 | `agent.enable_skills` | Enable skills system | `true` |
 | `agent.auto_approve` | Auto-approve tools | `false` |
 
+### LangSmith Configuration
+
+Configure LangSmith for tracing and debugging:
+
+```toml
+[langsmith]
+enabled = true
+api_key = "${LANGSMITH_API_KEY}"  # Your LangSmith API key (lsv2_pt_...)
+project = "my-project"             # Optional: project name
+```
+
+Or via environment variables:
+
+```bash
+export LANGSMITH_API_KEY="lsv2_pt_xxxx"
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_PROJECT="my-project"
+```
+
 ### Environment Variables
 
 - `ANTHROPIC_API_KEY`: Anthropic API key
 - `OPENAI_API_KEY`: OpenAI API key
 - `TELEGRAM_BOT_TOKEN`: Telegram Bot Token
 - `DISCORD_BOT_TOKEN`: Discord Bot Token
+- `DINGTALK_CLIENT_ID`: DingTalk Client ID
+- `DINGTALK_CLIENT_SECRET`: DingTalk Client Secret
+- `FEISHU_APP_ID`: Feishu App ID
+- `FEISHU_APP_SECRET`: Feishu App Secret
+- `LANGSMITH_API_KEY`: LangSmith API key for tracing (optional)
 - `DEEPCOBOT_LOG_LEVEL`: Log level (DEBUG, INFO, WARNING, ERROR)
 - `DEEPCOBOT_LOG_JSON`: Use JSON format logs (true/false)
 

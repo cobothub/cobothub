@@ -152,3 +152,15 @@ level = "INFO"
 json_format = false
 # 日志文件路径（可选）
 # file = "~/.deepcobot/deepcobot.log"
+
+# ==================== LangSmith 配置 ====================
+# 配置 LangSmith 用于追踪和调试 AI 应用
+
+[langsmith]
+# 是否启用 LangSmith 追踪
+enabled = false
+# LangSmith API 密钥（格式: lsv2_pt_...）
+# 从 https://smith.langchain.com/settings 获取你的 API 密钥
+# api_key = "${LANGSMITH_API_KEY}"
+# 项目名称（可选，默认为 "default"）
+# project = "my-project"

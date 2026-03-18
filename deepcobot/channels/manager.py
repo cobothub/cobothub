@@ -40,6 +40,7 @@ class ChannelManager:
         config: Config,
         bus: MessageBus,
         agent_handler: Callable[[InboundMessage], Coroutine[Any, Any, OutboundMessage | None]],
+        include_cli: bool = True,
     ):
         """
         初始化渠道管理器。
@@ -48,6 +49,7 @@ class ChannelManager:
             config: 配置对象
             bus: 消息总线实例
             agent_handler: Agent 消息处理函数
+            include_cli: 是否包含 CLI 渠道
         """
         self.config = config
         self.bus = bus
@@ -57,12 +59,16 @@ class ChannelManager:
         self._consumer_task: asyncio.Task | None = None
         self._running = False
 
-        self._init_channels()
+        self._init_channels(include_cli)
 
-    def _init_channels(self) -> None:
-        """根据配置初始化渠道"""
-        # CLI 渠道（始终可用）
-        if self.config.channels.cli.enabled:
+    def _init_channels(self, include_cli: bool = True) -> None:
+        """根据配置初始化渠道
+
+        Args:
+            include_cli: 是否包含 CLI 渠道
+        """
+        # CLI 渠道（仅在 include_cli=True 时启用）
+        if include_cli and self.config.channels.cli.enabled:
             from deepcobot.channels.cli_channel import CLIChannel
 
             self.channels["cli"] = CLIChannel(

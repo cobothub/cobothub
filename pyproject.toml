@@ -41,16 +41,13 @@ dependencies = [
     "loguru>=0.7",
     "rich>=13.0",
     "aiosqlite>=0.19",
-    "croniter>=6.0.0,<7.0.0",
-    "dingtalk-stream>=0.24.0,<1.0.0",
-    "python-telegram-bot[socks]>=22.6,<23.0",
 ]
 
 [project.optional-dependencies]
 telegram = ["python-telegram-bot>=20.0"]
 discord = ["discord.py>=2.3"]
 feishu = ["lark-oapi>=1.0"]
-dingtalk = ["dingtalk-stream>=1.0"]
+dingtalk = ["dingtalk-stream>=0.24.0,<1.0.0", "httpx>=0.25.0"]
 web = ["fastapi>=0.100", "uvicorn>=0.23", "sse-starlette>=1.6"]
 cron = ["croniter>=1.3"]
 metrics = ["prometheus-client>=0.17"]

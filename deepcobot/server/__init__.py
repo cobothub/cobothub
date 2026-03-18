@@ -7,7 +7,7 @@ from typing import Any
 from loguru import logger
 
 from deepcobot.config import Config
-from deepcobot.server.graph import create_graph, get_graph
+from deepcobot.server.graph import create_graph_async, get_graph_async
 
 
 def generate_langgraph_json(
@@ -44,4 +44,4 @@ def generate_langgraph_json(
     return langgraph_config
 
 
-__all__ = ["create_graph", "get_graph", "generate_langgraph_json"]
+__all__ = ["create_graph_async", "get_graph_async", "generate_langgraph_json"]

@@ -346,6 +346,132 @@ TRANSLATIONS: dict[str, dict[Language, str]] = {
         "zh": "助手",
     },
 
+    # Bot command
+    "bot.description": {
+        "en": "Start bot channels (Telegram, Discord, Feishu, DingTalk, etc.).",
+        "zh": "启动机器人渠道（Telegram、Discord、飞书、钉钉等）。",
+    },
+    "bot.example1": {
+        "en": "deepcobot bot",
+        "zh": "deepcobot bot",
+    },
+    "bot.example2": {
+        "en": "deepcobot bot --config /path/to/config.toml",
+        "zh": "deepcobot bot --config /path/to/config.toml",
+    },
+    "bot.config_help": {
+        "en": "Path to configuration file",
+        "zh": "配置文件路径",
+    },
+    "bot.starting": {
+        "en": "Starting bot channels...",
+        "zh": "正在启动机器人渠道...",
+    },
+    "bot.stopped": {
+        "en": "Bot channels stopped",
+        "zh": "机器人渠道已停止",
+    },
+    "bot.stopping": {
+        "en": "Stopping bot channels...",
+        "zh": "正在停止机器人渠道...",
+    },
+    "bot.no_channels": {
+        "en": "No channels enabled. Edit your config file to enable channels.",
+        "zh": "没有启用任何渠道。请编辑配置文件启用渠道。",
+    },
+    "bot.channels_started": {
+        "en": "started successfully",
+        "zh": "启动成功",
+    },
+    "bot.channel_failed": {
+        "en": "failed to start",
+        "zh": "启动失败",
+    },
+
+    # Approval
+    "approval.title": {
+        "en": "Tool Approval Required",
+        "zh": "工具审批请求",
+    },
+    "approval.tool": {
+        "en": "Tool",
+        "zh": "工具",
+    },
+    "approval.args": {
+        "en": "Arguments",
+        "zh": "参数",
+    },
+    "approval.description": {
+        "en": "Description",
+        "zh": "描述",
+    },
+    "approval.prompt": {
+        "en": "Approve this tool call? [y/n/e/r] (y=yes, n=no, e=edit, r=reject with message)",
+        "zh": "批准此工具调用？[y/n/e/r] (y=批准, n=拒绝, e=编辑, r=拒绝并留言)",
+    },
+    "approval.prompt_simple": {
+        "en": "Approve? [y/n]",
+        "zh": "批准？[y/n]",
+    },
+    "approval.approved": {
+        "en": "Approved",
+        "zh": "已批准",
+    },
+    "approval.rejected": {
+        "en": "Rejected",
+        "zh": "已拒绝",
+    },
+    "approval.edit_prompt": {
+        "en": "Enter new tool name (press Enter to keep current)",
+        "zh": "输入新工具名称（按回车保持当前）",
+    },
+    "approval.edit_args_prompt": {
+        "en": "Enter new arguments as JSON (press Enter to keep current)",
+        "zh": "输入新参数（JSON格式，按回车保持当前）",
+    },
+    "approval.reject_message_prompt": {
+        "en": "Enter rejection message (optional, press Enter to skip)",
+        "zh": "输入拒绝原因（可选，按回车跳过）",
+    },
+    "approval.edit_args_invalid": {
+        "en": "Invalid JSON, keeping original arguments",
+        "zh": "JSON 格式无效，保持原始参数",
+    },
+    "approval.invalid_choice": {
+        "en": "Invalid choice, please try again",
+        "zh": "无效选择，请重试",
+    },
+    "approval.multiple_tools": {
+        "en": "tools pending approval",
+        "zh": "个工具待审批",
+    },
+    "approval.approve_all": {
+        "en": "Approve all? [Y/n]",
+        "zh": "全部批准？[Y/n]",
+    },
+
+    # Progress
+    "progress.thinking": {
+        "en": "Thinking...",
+        "zh": "思考中...",
+    },
+    "progress.executing_tool": {
+        "en": "Executing tool:",
+        "zh": "执行工具：",
+    },
+    "progress.reading": {
+        "en": "Reading...",
+        "zh": "读取中...",
+    },
+    "progress.writing": {
+        "en": "Writing...",
+        "zh": "写入中...",
+    },
+    "progress.searching": {
+        "en": "Searching...",
+        "zh": "搜索中...",
+    },
+
     # Errors
     "error.config": {
         "en": "Configuration Error:",

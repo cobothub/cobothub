@@ -152,3 +152,15 @@ level = "INFO"
 json_format = false
 # Log file path (optional)
 # file = "~/.deepcobot/deepcobot.log"
+
+# ==================== LangSmith Configuration ====================
+# Configure LangSmith for tracing and debugging your AI applications
+
+[langsmith]
+# Enable LangSmith tracing
+enabled = false
+# LangSmith API key (format: lsv2_pt_...)
+# Get your API key from https://smith.langchain.com/settings
+# api_key = "${LANGSMITH_API_KEY}"
+# Project name (optional, defaults to "default")
+# project = "my-project"

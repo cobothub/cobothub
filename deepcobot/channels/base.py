@@ -4,11 +4,14 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from loguru import logger
 
 from deepcobot.channels.events import InboundMessage, OutboundMessage
+
+if TYPE_CHECKING:
+    from deepcobot.bus.queue import MessageBus
 
 
 class BaseChannel(ABC):
@@ -172,7 +175,3 @@ class BaseChannel(ABC):
             "running": self._running,
             "allowed_users_count": len(self._allowed_users),
         }
-
-
-# 类型提示
-from deepcobot.bus.queue import MessageBus

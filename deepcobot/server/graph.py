@@ -1,6 +1,10 @@
 """LangGraph Graph 导出模块
 
 导出 Agent graph 供 LangGraph 服务器使用。
+
+LangGraph CLI 支持两种导出方式：
+1. graph 变量直接是 StateGraph 实例
+2. graph 变量是返回 StateGraph 的工厂函数（支持 async）
 """
 
 from typing import Any
@@ -10,9 +14,9 @@ from loguru import logger
 from deepcobot.config import Config, load_config
 
 
-def create_graph(config: Config | None = None) -> Any:
+async def create_graph_async(config: Config | None = None) -> Any:
     """
-    创建并导出 LangGraph graph。
+    异步创建并导出 LangGraph graph。
 
     Args:
         config: 配置对象，如果未提供则加载默认配置
@@ -23,9 +27,9 @@ def create_graph(config: Config | None = None) -> Any:
     if config is None:
         config = load_config()
 
-    from deepcobot.agent import create_agent
+    from deepcobot.agent.core import _create_agent_async
 
-    agent_resources = create_agent(config)
+    agent_resources = await _create_agent_async(config)
     return agent_resources["graph"]
 
 
@@ -33,9 +37,9 @@ def create_graph(config: Config | None = None) -> Any:
 _default_graph = None
 
 
-def get_graph() -> Any:
+async def get_graph_async() -> Any:
     """
-    获取默认 graph 实例。
+    异步获取默认 graph 实例。
 
     Returns:
         LangGraph graph 对象
@@ -43,22 +47,24 @@ def get_graph() -> Any:
     global _default_graph
 
     if _default_graph is None:
-        _default_graph = create_graph()
+        _default_graph = await create_graph_async()
 
     return _default_graph
 
 
-# 导出 graph 变量（LangGraph 服务器期望的接口）
-graph = None  # 延迟初始化
+# LangGraph 异步工厂函数
+# LangGraph CLI 会调用这个函数来获取 graph
+async def graph(config: dict | None = None) -> Any:
+    """
+    LangGraph 异步工厂函数，返回编译后的 graph。
 
+    LangGraph CLI 期望 graph 是一个 StateGraph 实例或返回 StateGraph 的函数。
+    支持异步函数以避免阻塞调用。
 
-def __getattr__(name):
-    """延迟初始化 graph"""
-    global graph
+    Args:
+        config: 可选配置字典（LangGraph 运行时可能传入）
 
-    if name == "graph":
-        if graph is None:
-            graph = get_graph()
-        return graph
-
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    Returns:
+        编译后的 LangGraph StateGraph
+    """
+    return await get_graph_async()

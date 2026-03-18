@@ -185,6 +185,14 @@ class LoggingConfig(BaseModel):
         return v
 
 
+class LangSmithConfig(BaseModel):
+    """LangSmith 配置"""
+
+    enabled: bool = Field(default=False, description="是否启用 LangSmith tracing")
+    api_key: str | None = Field(default=None, description="LangSmith API 密钥 (格式: lsv2_pt_...)")
+    project: str | None = Field(default=None, description="LangSmith 项目名称")
+
+
 class Config(BaseModel):
     """完整配置"""
 
@@ -200,6 +208,7 @@ class Config(BaseModel):
     cron: CronConfig = Field(default_factory=CronConfig)
     services: ServicesConfig = Field(default_factory=ServicesConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    langsmith: LangSmithConfig = Field(default_factory=LangSmithConfig)
 
     model_config = {
         "extra": "ignore",  # 忽略未知字段

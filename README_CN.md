@@ -18,6 +18,7 @@
 - **多渠道支持**: CLI、Telegram、Discord、飞书、钉钉、Web API
 - **DeepAgents 集成**: 内置记忆系统、技能系统、工具审批
 - **LangGraph 兼容**: 支持 LangGraph 服务器部署
+- **DeepAgents UI**: 支持与 deepagents-ui 网页界面集成，提供实时对话、会话管理、文件可视化等功能
 - **可观测性**: 内置健康检查、Prometheus 指标、结构化日志
 
 ## 快速开始
@@ -97,9 +98,70 @@ deepcobot run
 # 指定配置文件
 deepcobot run --config /path/to/config.toml
 
+# 启动机器人渠道（Telegram、Discord、飞书、钉钉等）
+deepcobot bot
+
 # 启动 LangGraph 服务器
 deepcobot serve --port 8123
 ```
+
+### 使用 DeepAgents UI
+
+DeepCoBot 支持与 [deepagents-ui](https://github.com/langchain-ai/deep-agents-ui) 集成，提供网页界面与 AI 助手交互。
+
+**安装 DeepAgents UI**
+
+```bash
+# 克隆仓库
+git clone https://github.com/langchain-ai/deep-agents-ui.git
+cd deep-agents-ui
+
+# 安装依赖
+yarn install
+```
+
+**启动 UI**
+
+1. 启动 LangGraph 服务器：
+
+```bash
+deepcobot serve --port 8123
+```
+
+你会看到类似输出：
+```
+╦  ┌─┐┌┐┌┌─┐╔═╗┬─┐┌─┐┌─┐┬ ┬
+║  ├─┤││││ ┬║ ╦├┬┘├─┤├─┘├─┤
+╩═╝┴ ┴┘└┘└─┘╚═╝┴└─┴ ┴┴  ┴ ┴
+
+- 🚀 API: http://127.0.0.1:8123
+- 🎨 Studio UI: https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:8123
+- 📚 API Docs: http://127.0.0.1:8123/docs
+```
+
+Studio UI 链接可以连接到 [LangGraph Studio](https://studio.langchain.com/)（LangSmith 云服务）进行 tracing 和调试。这是可选的 - 你可以直接使用本地的 DeepAgents UI，无需 LangSmith。
+
+2. 启动 DeepAgents UI：
+
+```bash
+cd deep-agents-ui
+yarn dev
+```
+
+3. 打开浏览器访问 [http://localhost:3000](http://localhost:3000)
+
+4. 在 UI 中配置连接：
+   - **Deployment URL**: `http://127.0.0.1:8123`（或你的服务器地址）
+   - **Assistant ID**: `agent`（定义在 `langgraph.json` 中）
+
+**功能特性**
+
+- 实时聊天界面，支持流式响应
+- 会话管理，查看对话历史
+- 查看 agent 状态中的文件
+- 工具调用检查与审批
+- 调试模式，支持逐步执行
+- 深色/浅色主题支持
 
 ## 使用示例
 
@@ -130,7 +192,27 @@ allowed_users = ["your_telegram_id"]
 
 ```bash
 export TELEGRAM_BOT_TOKEN="your-bot-token"
-deepcobot run
+deepcobot bot
+```
+
+### 钉钉机器人
+
+配置 `~/.deepcobot/config.toml`：
+
+```toml
+[channels.dingtalk]
+enabled = true
+client_id = "${DINGTALK_CLIENT_ID}"
+client_secret = "${DINGTALK_CLIENT_SECRET}"
+allowed_users = []
+```
+
+运行：
+
+```bash
+export DINGTALK_CLIENT_ID="your-client-id"
+export DINGTALK_CLIENT_SECRET="your-client-secret"
+deepcobot bot
 ```
 
 ### Web API
@@ -167,12 +249,36 @@ curl -X POST http://localhost:8080/chat \
 | `agent.enable_skills` | 启用技能系统 | `true` |
 | `agent.auto_approve` | 自动审批工具 | `false` |
 
+### LangSmith 配置
+
+配置 LangSmith 用于追踪和调试：
+
+```toml
+[langsmith]
+enabled = true
+api_key = "${LANGSMITH_API_KEY}"  # LangSmith API 密钥 (lsv2_pt_...)
+project = "my-project"             # 可选：项目名称
+```
+
+或通过环境变量配置：
+
+```bash
+export LANGSMITH_API_KEY="lsv2_pt_xxxx"
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_PROJECT="my-project"
+```
+
 ### 环境变量
 
 - `ANTHROPIC_API_KEY`: Anthropic API 密钥
 - `OPENAI_API_KEY`: OpenAI API 密钥
 - `TELEGRAM_BOT_TOKEN`: Telegram Bot Token
 - `DISCORD_BOT_TOKEN`: Discord Bot Token
+- `DINGTALK_CLIENT_ID`: 钉钉 Client ID
+- `DINGTALK_CLIENT_SECRET`: 钉钉 Client Secret
+- `FEISHU_APP_ID`: 飞书 App ID
+- `FEISHU_APP_SECRET`: 飞书 App Secret
+- `LANGSMITH_API_KEY`: LangSmith API 密钥用于追踪（可选）
 - `DEEPCOBOT_LOG_LEVEL`: 日志级别 (DEBUG, INFO, WARNING, ERROR)
 - `DEEPCOBOT_LOG_JSON`: 使用 JSON 格式日志 (true/false)
 
