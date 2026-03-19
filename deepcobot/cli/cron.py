@@ -8,6 +8,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from deepcobot import apply_config
 from deepcobot.config import load_config
 from deepcobot.cron import CronService
 from deepcobot.cli.i18n import t
@@ -41,6 +42,7 @@ def cron_list(
     lang = setup_language(config)
 
     cfg = load_config(config)
+    apply_config(cfg)  # 应用日志等配置
 
     service = CronService(cfg.cron.store_path)
     asyncio.run(service.start())
@@ -111,6 +113,7 @@ def cron_add(
     lang = setup_language(config)
 
     cfg = load_config(config)
+    apply_config(cfg)  # 应用日志等配置
 
     # 确定调度表达式
     schedule = every or cron or "1h"
@@ -151,6 +154,7 @@ def cron_remove(
     lang = setup_language(config)
 
     cfg = load_config(config)
+    apply_config(cfg)  # 应用日志等配置
 
     service = CronService(cfg.cron.store_path)
 
@@ -179,6 +183,7 @@ def cron_run_cmd(
     lang = setup_language(config)
 
     cfg = load_config(config)
+    apply_config(cfg)  # 应用日志等配置
 
     service = CronService(cfg.cron.store_path)
 

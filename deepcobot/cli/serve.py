@@ -8,6 +8,7 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 
+from deepcobot import apply_config
 from deepcobot.config import load_config
 from deepcobot.cli.i18n import t
 from deepcobot.cli.context import setup_language
@@ -45,6 +46,7 @@ def serve_cmd(
 
     try:
         cfg = load_config(config)
+        apply_config(cfg)  # 应用日志等配置
 
         console.print(Panel.fit(
             f"[bold green]DeepCoBot LangGraph Server[/bold green]\n"

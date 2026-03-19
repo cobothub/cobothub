@@ -10,7 +10,7 @@ from loguru import logger
 from rich.console import Console
 from rich.panel import Panel
 
-from deepcobot import __version__
+from deepcobot import __version__, apply_config
 from deepcobot.config import load_config
 from deepcobot.cli.i18n import t, Language
 from deepcobot.cli.context import setup_language
@@ -31,6 +31,7 @@ def bot_cmd(
 
     try:
         cfg = load_config(config)
+        apply_config(cfg)  # 应用日志等配置
 
         console.print(Panel.fit(
             f"[bold green]DeepCoBot[/bold green] v{__version__}\n"

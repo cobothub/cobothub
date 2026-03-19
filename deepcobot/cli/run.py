@@ -13,7 +13,7 @@ from rich.prompt import Prompt
 from rich.status import Status
 from rich.live import Live
 
-from deepcobot import __version__
+from deepcobot import __version__, apply_config
 from deepcobot.config import load_config
 from deepcobot.agent import AgentSession
 from deepcobot.cli.i18n import t, Language
@@ -56,6 +56,7 @@ def run_cmd(
 
     try:
         cfg = load_config(config)
+        apply_config(cfg)  # 应用日志等配置
 
         if auto_approve:
             cfg.agent.auto_approve = True

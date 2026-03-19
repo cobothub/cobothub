@@ -19,7 +19,7 @@
 - **DeepAgents 集成**: 内置记忆系统、技能系统、工具审批
 - **LangGraph 兼容**: 支持 LangGraph 服务器部署
 - **DeepAgents UI**: 支持与 deepagents-ui 网页界面集成，提供实时对话、会话管理、文件可视化等功能
-- **可观测性**: 内置健康检查、Prometheus 指标、结构化日志
+- **可观测性**: 内置健康检查、Prometheus 指标、结构化日志、LangSmith 追踪支持
 
 ## 快速开始
 
@@ -325,6 +325,66 @@ project = "my-project"             # 可选：项目名称
 export LANGSMITH_API_KEY="lsv2_pt_xxxx"
 export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_PROJECT="my-project"
+```
+
+## 可观测性
+
+DeepCoBot 通过 LangSmith 集成提供可观测性支持。
+
+### LangSmith 追踪
+
+[LangSmith](https://www.langchain.com/langsmith) 是一个用于追踪、测试和调试 LLM 应用的平台。DeepCoBot 与 LangSmith 无缝集成，提供详细的可观测性。
+
+**启用 LangSmith 追踪：**
+
+```toml
+[langsmith]
+enabled = true
+api_key = "${LANGSMITH_API_KEY}"
+project = "deepcobot-traces"
+```
+
+**LangSmith 捕获的内容：**
+
+- **对话追踪**：完整的消息流及时间信息
+- **工具调用**：所有工具调用的输入/输出及审批状态
+- **记忆操作**：对话过程中的记忆读写
+- **技能执行**：技能加载和执行详情
+- **Token 用量**：输入/输出 Token 数量，用于成本追踪
+- **延迟指标**：各组件响应时间分解
+
+**优势：**
+
+1. **调试复杂问题**：逐步查看对话，理解 Agent 行为
+2. **成本分析**：追踪跨会话的 Token 用量
+3. **性能优化**：识别工具调用或 LLM 响应的瓶颈
+4. **回归测试**：从追踪的对话创建测试用例
+
+**访问 LangSmith 控制台：**
+
+启用后，追踪数据会出现在 [LangSmith 控制台](https://smith.langchain.com/)。运行 `deepcobot serve` 时也可使用 [LangGraph Studio](https://studio.langchain.com/)：
+
+```bash
+deepcobot serve --port 8123
+# 打开输出中显示的 Studio UI 链接
+```
+
+### 结构化日志
+
+配置生产环境的日志输出：
+
+```toml
+[logging]
+level = "INFO"
+json_format = true
+file = "~/.deepcobot/deepcobot.log"
+```
+
+或通过环境变量：
+
+```bash
+export DEEPCOBOT_LOG_LEVEL="DEBUG"
+export DEEPCOBOT_LOG_JSON="true"
 ```
 
 ### 环境变量

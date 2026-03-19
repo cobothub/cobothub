@@ -19,7 +19,7 @@ A minimalist personal AI assistant framework built on [DeepAgents](https://githu
 - **DeepAgents Integration**: Built-in memory system, skills system, tool approval
 - **LangGraph Compatible**: Support for LangGraph server deployment
 - **DeepAgents UI**: Support integration with deepagents-ui web interface for real-time chat, thread management, and file visualization
-- **Observability**: Built-in health checks, Prometheus metrics, structured logging
+- **Observability**: Built-in health checks, Prometheus metrics, structured logging, LangSmith tracing support
 
 ## Quick Start
 
@@ -325,6 +325,66 @@ Or via environment variables:
 export LANGSMITH_API_KEY="lsv2_pt_xxxx"
 export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_PROJECT="my-project"
+```
+
+## Observability
+
+DeepCoBot provides observability through LangSmith integration.
+
+### LangSmith Tracing
+
+[LangSmith](https://www.langchain.com/langsmith) is a platform for tracing, testing, and debugging LLM applications. DeepCoBot integrates seamlessly with LangSmith for detailed observability.
+
+**Enable LangSmith Tracing:**
+
+```toml
+[langsmith]
+enabled = true
+api_key = "${LANGSMITH_API_KEY}"
+project = "deepcobot-traces"
+```
+
+**What LangSmith Captures:**
+
+- **Conversation Traces**: Complete message flows with timing information
+- **Tool Calls**: All tool invocations with inputs/outputs and approval status
+- **Memory Operations**: Memory reads and writes during conversations
+- **Skills Execution**: Skill loading and execution details
+- **Token Usage**: Input/output token counts for cost tracking
+- **Latency Metrics**: Response time breakdown by component
+
+**Benefits:**
+
+1. **Debug Complex Issues**: Step through conversations to understand agent behavior
+2. **Cost Analysis**: Track token usage across sessions
+3. **Performance Optimization**: Identify bottlenecks in tool calls or LLM responses
+4. **Regression Testing**: Create test cases from traced conversations
+
+**Access LangSmith Dashboard:**
+
+Once enabled, traces appear in [LangSmith Dashboard](https://smith.langchain.com/). You can also use [LangGraph Studio](https://studio.langchain.com/) when running `deepcobot serve`:
+
+```bash
+deepcobot serve --port 8123
+# Open the Studio UI link shown in the output
+```
+
+### Structured Logging
+
+Configure logging for production environments:
+
+```toml
+[logging]
+level = "INFO"
+json_format = true
+file = "~/.deepcobot/deepcobot.log"
+```
+
+Or via environment variable:
+
+```bash
+export DEEPCOBOT_LOG_LEVEL="DEBUG"
+export DEEPCOBOT_LOG_JSON="true"
 ```
 
 ### Environment Variables
