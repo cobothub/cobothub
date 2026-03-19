@@ -12,6 +12,7 @@ from loguru import logger
 from deepcobot.config import Config
 from deepcobot.agent.utils import HEARTBEAT_FILE, DEFAULT_HEARTBEAT_CONTENT
 from deepcobot.agent.prompts import build_system_prompt
+from deepcobot.agent.templates import DEFAULT_AGENTS_MD, DEFAULT_PROFILE_MD
 from deepcobot.agent.builder import (
     build_middlewares,
     build_memory_sources,
@@ -19,6 +20,7 @@ from deepcobot.agent.builder import (
     build_async_subagents,
     setup_api_key,
     get_interrupt_config,
+    build_compact_tool_middleware,
 )
 
 # 延迟导入，避免在未安装时立即报错
@@ -71,8 +73,21 @@ async def _create_async_sqlite_checkpointer(db_path: str):
 def _ensure_workspace(workspace: Path) -> None:
     """确保工作空间目录结构存在"""
     workspace.mkdir(parents=True, exist_ok=True)
-    (workspace / "memory").mkdir(exist_ok=True)
+    memory_dir = workspace / "memory"
+    memory_dir.mkdir(exist_ok=True)
+    (memory_dir / "daily").mkdir(exist_ok=True)  # 每日日志目录
     (workspace / "skills").mkdir(exist_ok=True)
+
+    # 创建默认的记忆文件（如果不存在）
+    agents_md = memory_dir / "AGENTS.md"
+    if not agents_md.exists():
+        agents_md.write_text(DEFAULT_AGENTS_MD, encoding="utf-8")
+        logger.info(f"Created default AGENTS.md at {agents_md}")
+
+    profile_md = memory_dir / "PROFILE.md"
+    if not profile_md.exists():
+        profile_md.write_text(DEFAULT_PROFILE_MD, encoding="utf-8")
+        logger.info(f"Created default PROFILE.md at {profile_md}")
 
     # 创建默认的 HEARTBEAT.md 文件（如果不存在）
     heartbeat_path = workspace / HEARTBEAT_FILE
@@ -102,7 +117,7 @@ def create_agent(config: Config) -> dict[str, Any]:
     logger.info(f"Initializing agent with workspace: {workspace}")
 
     system_prompt = build_system_prompt(config)
-    backend = LocalShellBackend(root_dir=str(workspace))
+    backend = LocalShellBackend(root_dir=str(workspace), virtual_mode=False)
     checkpointer = MemorySaver()  # 同步版本使用内存存储
 
     logger.info("Checkpointer: MemorySaver (non-persistent)")
@@ -116,10 +131,20 @@ def create_agent(config: Config) -> dict[str, Any]:
 
     model = config.agent.model
 
+    # 构建压缩工具中间件
+    compact_middleware, composite_backend = build_compact_tool_middleware(
+        config, model, backend
+    )
+    if compact_middleware is not None:
+        middlewares.append(compact_middleware)
+        effective_backend = composite_backend
+    else:
+        effective_backend = backend
+
     agent_kwargs: dict[str, Any] = {
         "model": model,
         "system_prompt": system_prompt,
-        "backend": backend,
+        "backend": effective_backend,
         "checkpointer": checkpointer,
         "middleware": middlewares,
         "interrupt_on": interrupt_on,
@@ -161,7 +186,7 @@ async def create_agent_async(config: Config) -> dict[str, Any]:
     logger.info(f"Initializing agent with workspace: {workspace}")
 
     system_prompt = build_system_prompt(config)
-    backend = LocalShellBackend(root_dir=str(workspace))
+    backend = LocalShellBackend(root_dir=str(workspace), virtual_mode=False)
 
     # 使用异步 SQLite Checkpointer
     checkpoints_path = workspace / "checkpoints.db"
@@ -177,10 +202,20 @@ async def create_agent_async(config: Config) -> dict[str, Any]:
 
     model = config.agent.model
 
+    # 构建压缩工具中间件
+    compact_middleware, composite_backend = build_compact_tool_middleware(
+        config, model, backend
+    )
+    if compact_middleware is not None:
+        middlewares.append(compact_middleware)
+        effective_backend = composite_backend
+    else:
+        effective_backend = backend
+
     agent_kwargs: dict[str, Any] = {
         "model": model,
         "system_prompt": system_prompt,
-        "backend": backend,
+        "backend": effective_backend,
         "checkpointer": checkpointer,
         "middleware": middlewares,
         "interrupt_on": interrupt_on,

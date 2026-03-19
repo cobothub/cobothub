@@ -105,6 +105,9 @@ class AgentDefaults(BaseModel):
     system_prompt: str | None = Field(None, description="自定义系统提示词")
     enable_memory: bool = Field(default=True, description="是否启用记忆系统")
     enable_skills: bool = Field(default=True, description="是否启用技能系统")
+    enable_compact_tool: bool = Field(
+        default=True, description="是否启用手动压缩对话工具 (compact_conversation)"
+    )
     auto_approve: bool = Field(default=False, description="是否自动审批工具调用")
 
     @field_validator("workspace", mode="before")
