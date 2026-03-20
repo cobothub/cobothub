@@ -1,6 +1,7 @@
 """Agent 配置构建函数"""
 
 from contextlib import AsyncExitStack
+from pathlib import Path
 from typing import Any
 
 from langchain_core.tools import BaseTool
@@ -92,9 +93,46 @@ def build_memory_sources(config: Config) -> list[str] | None:
     return sources if sources else None
 
 
+def get_builtin_skills_dir() -> Path:
+    """
+    获取内置技能目录路径。
+
+    Returns:
+        内置技能目录的 Path 对象
+    """
+    # 内置 skills 位于 deepcobot/skills/ 目录
+    return Path(__file__).parent.parent / "skills"
+
+
+def list_skill_dirs(skills_root: Path) -> list[str]:
+    """
+    递归列出所有包含 SKILL.md 的技能目录。
+
+    Args:
+        skills_root: 技能根目录
+
+    Returns:
+        技能目录路径列表
+    """
+    skill_dirs = []
+    if not skills_root.exists():
+        return skill_dirs
+
+    # 递归查找所有 SKILL.md 文件
+    for skill_md in skills_root.rglob("SKILL.md"):
+        skill_dir = skill_md.parent
+        skill_dirs.append(str(skill_dir))
+
+    return skill_dirs
+
+
 def build_skills_sources(config: Config) -> list[str] | None:
     """
     构建技能源路径列表。
+
+    加载内置技能和用户工作空间技能。
+    内置技能: deepcobot/skills/ 目录下的预定义技能
+    用户技能: ~/.deepcobot/workspace/skills/ 目录下的自定义技能
 
     Args:
         config: 配置对象
@@ -106,19 +144,40 @@ def build_skills_sources(config: Config) -> list[str] | None:
         logger.info("Skills disabled by config")
         return None
 
+    all_skills = []
+
+    # 1. 加载内置技能
+    builtin_skills_dir = get_builtin_skills_dir()
+    if builtin_skills_dir.exists():
+        builtin_skills = list_skill_dirs(builtin_skills_dir)
+        if builtin_skills:
+            all_skills.extend(builtin_skills)
+            logger.info(f"Built-in skills: {len(builtin_skills)} skill(s) from {builtin_skills_dir}")
+            # 列出技能名称
+            skill_names = [Path(s).name for s in builtin_skills]
+            logger.debug(f"Built-in skill names: {skill_names}")
+
+    # 2. 加载用户工作空间技能
     workspace = config.agent.workspace
-    skills_dir = workspace / "skills"
-    skills_dir_str = str(skills_dir)
+    user_skills_dir = workspace / "skills"
 
-    # 检查 skills 目录是否存在
-    if skills_dir.exists():
-        # 列出子目录（skills）
-        subdirs = [d.name for d in skills_dir.iterdir() if d.is_dir() and not d.name.startswith('.')]
-        logger.info(f"Skills enabled: {skills_dir_str}, found {len(subdirs)} skill(s): {subdirs}")
+    if user_skills_dir.exists():
+        user_skills = list_skill_dirs(user_skills_dir)
+        if user_skills:
+            all_skills.extend(user_skills)
+            logger.info(f"User skills: {len(user_skills)} skill(s) from {user_skills_dir}")
+            # 列出技能名称
+            skill_names = [Path(s).name for s in user_skills]
+            logger.debug(f"User skill names: {skill_names}")
     else:
-        logger.warning(f"Skills directory not found: {skills_dir_str}")
+        logger.info(f"User skills directory not found: {user_skills_dir}")
 
-    return [skills_dir_str]
+    if all_skills:
+        logger.info(f"Total skills loaded: {len(all_skills)}")
+    else:
+        logger.warning("No skills found (neither built-in nor user)")
+
+    return all_skills if all_skills else None
 
 
 def build_async_subagents(config: Config) -> list[dict[str, str]]:

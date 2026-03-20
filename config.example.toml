@@ -24,7 +24,12 @@ recursion_limit = 50
 enable_memory = true
 
 # Enable skills system
+# Built-in skills (core/cron, core/weather, office/pdf, office/xlsx, etc.) are loaded automatically
+# User skills can be added to ~/.deepcobot/workspace/skills/<skill-name>/SKILL.md
 enable_skills = true
+
+# Enable compact conversation tool for manual context compression
+enable_compact_tool = true
 
 # Auto-approve tool calls (set to false for manual approval of sensitive operations)
 # Tools requiring approval: execute, write_file, edit_file, web_search, task

@@ -22,6 +22,8 @@ Built on the powerful [DeepAgents SDK](https://github.com/langchain-ai/deepagent
 | 🌐 **Multi-Channel** | Telegram, Discord, Feishu, DingTalk, Web API, CLI |
 | 🎨 **Visual Debugging** | LangGraph Studio & DeepAgents UI integration |
 | 🔌 **MCP Support** | Model Context Protocol for external tool integration |
+| 💓 **Heartbeat Service** | Health monitoring and status reporting for production reliability |
+| ⏰ **Cron Scheduler** | Scheduled task execution with flexible timing configurations |
 
 ## Ecosystem Advantage
 

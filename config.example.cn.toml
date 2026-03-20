@@ -24,7 +24,12 @@ recursion_limit = 50
 enable_memory = true
 
 # 是否启用技能系统
+# 内置技能（core/cron, core/weather, office/pdf, office/xlsx 等）会自动加载
+# 用户技能可添加到 ~/.deepcobot/workspace/skills/<技能名>/SKILL.md
 enable_skills = true
+
+# 是否启用手动压缩对话工具
+enable_compact_tool = true
 
 # 是否自动审批工具调用（设为 false 时需要手动审批敏感操作）
 # 需要审批的工具: execute, write_file, edit_file, web_search, task
