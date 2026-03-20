@@ -363,8 +363,10 @@ class AgentSession:
                 logger.debug(f"[LLM] >>> {event_name} START")
                 input_data = event_data.get("input", {})
                 if input_data and "messages" in input_data:
-                    msg_count = len(input_data.get("messages", []))
+                    msg_list = input_data.get("messages", [])
+                    msg_count = len(msg_list)
                     logger.debug(f"[LLM] >>> {event_name} messages: {msg_count}")
+                    # logger.debug(f"[LLM] >>> {event_name} messages: {msg_list[-1]}")
 
             elif event_type in ("on_chat_model_end", "on_llm_end"):
                 logger.debug(f"[LLM] <<< {event_name} END ({time.time() - start_time:.2f}s)")

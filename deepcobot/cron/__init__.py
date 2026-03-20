@@ -6,6 +6,7 @@ from deepcobot.cron.types import (
     is_cron_expression,
     compute_next_run,
 )
+from deepcobot.cron.store import CronStore
 from deepcobot.cron.service import CronService
 from deepcobot.cron.heartbeat import (
     HeartbeatService,
@@ -16,6 +17,9 @@ from deepcobot.cron.heartbeat import (
 __all__ = [
     # CronJob
     "CronJob",
+    # Store (for CLI operations)
+    "CronStore",
+    # Service (for scheduling)
     "CronService",
     "parse_interval",
     "is_cron_expression",
