@@ -6,7 +6,7 @@ from typing import Any, Callable, Awaitable
 
 from loguru import logger
 
-from deepcobot.config import Config
+from deepcobot.config import Config, get_langfuse_handler
 from deepcobot.agent.factory import create_agent_async
 from deepcobot.agent.utils import sanitize_string
 from deepcobot.agent.approval import get_approval_manager
@@ -82,13 +82,20 @@ class AgentSession:
         self._thread_id = thread_id
 
     def get_thread_config(self) -> dict[str, Any]:
-        """获取线程配置"""
-        return {
+        """获取线程配置（包含 Langfuse callbacks）"""
+        thread_config = {
             "configurable": {
                 "thread_id": self._thread_id,
             },
             "recursion_limit": self.config.agent.recursion_limit,
         }
+
+        # 添加 Langfuse callback handler
+        langfuse_handler = get_langfuse_handler(self.config)
+        if langfuse_handler is not None:
+            thread_config["callbacks"] = [langfuse_handler]
+
+        return thread_config
 
     def set_approval_callback(
         self, callback: Callable[[list[dict]], Awaitable[list[dict]]]

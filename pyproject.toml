@@ -52,8 +52,9 @@ web = ["fastapi>=0.100", "uvicorn>=0.23", "sse-starlette>=1.6"]
 cron = ["croniter>=1.3"]
 metrics = ["prometheus-client>=0.17"]
 mcp = ["langchain-mcp-adapters>=0.2", "mcp>=1.0"]
+langfuse = ["langfuse>=2.0"]
 all = [
-    "deepcobot[telegram,discord,feishu,dingtalk,web,cron,metrics,mcp]",
+    "deepcobot[telegram,discord,feishu,dingtalk,web,cron,metrics,mcp,langfuse]",
 ]
 dev = [
     "pytest>=7.0",

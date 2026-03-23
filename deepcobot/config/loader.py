@@ -44,6 +44,95 @@ def apply_langsmith_config(config: Config) -> None:
     )
 
 
+_langfuse_handler = None
+
+
+def get_langfuse_handler(config: Config):
+    """
+    获取 Langfuse CallbackHandler 实例。
+
+    通过环境变量配置 Langfuse，然后创建 CallbackHandler。
+    Langfuse SDK 会自动读取以下环境变量：
+    - LANGFUSE_PUBLIC_KEY
+    - LANGFUSE_SECRET_KEY
+    - LANGFUSE_HOST (或 LANGFUSE_BASE_URL)
+
+    Args:
+        config: 配置对象
+
+    Returns:
+        Langfuse CallbackHandler 实例，如果未启用则返回 None
+    """
+    global _langfuse_handler
+
+    if not config.langfuse.enabled:
+        return None
+
+    if _langfuse_handler is not None:
+        return _langfuse_handler
+
+    try:
+        from langfuse import Langfuse
+        from langfuse.langchain import CallbackHandler
+
+        # 先设置环境变量，Langfuse SDK 会自动读取
+        if config.langfuse.public_key:
+            os.environ["LANGFUSE_PUBLIC_KEY"] = config.langfuse.public_key
+
+        if config.langfuse.secret_key:
+            os.environ["LANGFUSE_SECRET_KEY"] = config.langfuse.secret_key
+
+        if config.langfuse.base_url:
+            # Langfuse SDK 使用 LANGFUSE_HOST 作为环境变量
+            os.environ["LANGFUSE_HOST"] = config.langfuse.base_url
+
+        # 初始化 Langfuse 客户端（使用环境变量配置）
+        Langfuse()
+
+        # 创建 CallbackHandler（会使用已初始化的客户端）
+        _langfuse_handler = CallbackHandler()
+
+        logger.info(
+            f"Langfuse tracing enabled: base_url={config.langfuse.base_url or 'https://cloud.langfuse.com'}"
+        )
+        return _langfuse_handler
+    except ImportError:
+        logger.warning(
+            "Langfuse is enabled but langfuse package is not installed. "
+            "Install it with: pip install deepcobot[langfuse]"
+        )
+        return None
+
+
+def apply_langfuse_config(config: Config) -> None:
+    """
+    应用 Langfuse 配置。
+
+    此函数设置环境变量供 Langfuse SDK 使用。
+    实际的 CallbackHandler 在 get_langfuse_handler 中创建。
+
+    Args:
+        config: 配置对象
+    """
+    if not config.langfuse.enabled:
+        return
+
+    # 设置环境变量，Langfuse SDK 会自动读取
+    if config.langfuse.public_key:
+        os.environ["LANGFUSE_PUBLIC_KEY"] = config.langfuse.public_key
+
+    if config.langfuse.secret_key:
+        os.environ["LANGFUSE_SECRET_KEY"] = config.langfuse.secret_key
+
+    if config.langfuse.base_url:
+        # Langfuse SDK 使用 LANGFUSE_HOST 作为环境变量
+        os.environ["LANGFUSE_HOST"] = config.langfuse.base_url
+
+    logger.info(
+        f"Langfuse configured: base_url={config.langfuse.base_url or 'https://cloud.langfuse.com'}"
+    )
+
+
 def _expand_env_vars(value: Any, skip_expansion: bool = False) -> Any:
     """
     递归替换配置值中的环境变量。
@@ -203,6 +292,9 @@ def _load_config_from_file(config_path: Path) -> Config:
 
     # 应用 LangSmith 配置
     apply_langsmith_config(config)
+
+    # 应用 Langfuse 配置
+    apply_langfuse_config(config)
 
     return config
 

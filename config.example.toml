@@ -226,6 +226,24 @@ enabled = false
 # Project name (optional, defaults to "default")
 # project = "my-project"
 
+# ==================== Langfuse Configuration ====================
+# Configure Langfuse for tracing and debugging your AI applications
+# Langfuse is an open-source alternative to LangSmith
+
+[langfuse]
+# Enable Langfuse tracing
+enabled = false
+# Langfuse public key (format: pk-...)
+# Get your keys from https://cloud.langfuse.com or your self-hosted instance
+# public_key = "${LANGFUSE_PUBLIC_KEY}"
+# Langfuse secret key (format: sk-...)
+# secret_key = "${LANGFUSE_SECRET_KEY}"
+# Langfuse base URL (optional, defaults to https://cloud.langfuse.com)
+# For self-hosted: base_url = "https://langfuse.your-domain.com"
+# base_url = "${LANGFUSE_BASE_URL}"
+# Project name (optional)
+# project = "my-project"
+
 # ==================== MCP (Model Context Protocol) Configuration ====================
 # Connect to MCP servers to extend Agent capabilities with external tools
 

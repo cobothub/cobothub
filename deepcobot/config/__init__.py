@@ -19,6 +19,7 @@ from deepcobot.config.schema import (
     ServicesConfig,
     LoggingConfig,
     LangSmithConfig,
+    LangfuseConfig,
 )
 from deepcobot.config.loader import (
     load_config,
@@ -26,6 +27,7 @@ from deepcobot.config.loader import (
     ensure_config_dir,
     create_default_config,
     _expand_env_vars,
+    get_langfuse_handler,
 )
 
 __all__ = [
@@ -48,10 +50,12 @@ __all__ = [
     "ServicesConfig",
     "LoggingConfig",
     "LangSmithConfig",
+    "LangfuseConfig",
     # Loader
     "load_config",
     "get_default_config_path",
     "ensure_config_dir",
     "create_default_config",
     "_expand_env_vars",
+    "get_langfuse_handler",
 ]

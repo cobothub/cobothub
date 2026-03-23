@@ -226,6 +226,24 @@ enabled = false
 # 项目名称（可选，默认为 "default"）
 # project = "my-project"
 
+# ==================== Langfuse 配置 ====================
+# 配置 Langfuse 用于追踪和调试 AI 应用
+# Langfuse 是 LangSmith 的开源替代方案
+
+[langfuse]
+# 是否启用 Langfuse 追踪
+enabled = false
+# Langfuse 公钥（格式: pk-...）
+# 从 https://cloud.langfuse.com 或自托管实例获取密钥
+# public_key = "${LANGFUSE_PUBLIC_KEY}"
+# Langfuse 私钥（格式: sk-...）
+# secret_key = "${LANGFUSE_SECRET_KEY}"
+# Langfuse 服务地址（可选，默认为 https://cloud.langfuse.com）
+# 自托管时设置为: base_url = "https://langfuse.your-domain.com"
+# base_url = "${LANGFUSE_BASE_URL}"
+# 项目名称（可选）
+# project = "my-project"
+
 # ==================== MCP (Model Context Protocol) 配置 ====================
 # 连接 MCP 服务器以扩展 Agent 能力
 

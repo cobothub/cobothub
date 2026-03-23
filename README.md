@@ -437,6 +437,43 @@ deepcobot serve --port 8123
 # Open the Studio UI link shown in the output
 ```
 
+### Langfuse Tracing
+
+[Langfuse](https://langfuse.com/) is an open-source alternative to LangSmith for tracing and debugging LLM applications. DeepCoBot supports Langfuse integration.
+
+**Install with Langfuse support:**
+
+```bash
+pip install deepcobot[langfuse]
+```
+
+**Enable Langfuse Tracing:**
+
+```toml
+[langfuse]
+enabled = true
+public_key = "${LANGFUSE_PUBLIC_KEY}"
+secret_key = "${LANGFUSE_SECRET_KEY}"
+base_url = "${LANGFUSE_BASE_URL}"  # Optional, defaults to https://cloud.langfuse.com
+```
+
+**Or via environment variables:**
+
+```bash
+export LANGFUSE_PUBLIC_KEY="pk-xxx"
+export LANGFUSE_SECRET_KEY="sk-xxx"
+export LANGFUSE_BASE_URL="https://cloud.langfuse.com"  # Optional
+```
+
+**Benefits of Langfuse:**
+
+- **Open Source**: Self-host or use the cloud version
+- **Privacy Control**: Keep your data on your own infrastructure
+- **Feature Parity**: Similar tracing capabilities to LangSmith
+- **Cost Effective**: Free self-hosted option
+
+**Note:** LangSmith and Langfuse should not be enabled simultaneously. Choose one tracing backend.
+
 ### Structured Logging
 
 Configure logging for production environments:
@@ -466,6 +503,9 @@ export DEEPCOBOT_LOG_JSON="true"
 - `FEISHU_APP_ID`: Feishu App ID
 - `FEISHU_APP_SECRET`: Feishu App Secret
 - `LANGSMITH_API_KEY`: LangSmith API key for tracing (optional)
+- `LANGFUSE_PUBLIC_KEY`: Langfuse public key for tracing (optional)
+- `LANGFUSE_SECRET_KEY`: Langfuse secret key for tracing (optional)
+- `LANGFUSE_BASE_URL`: Langfuse server URL (optional)
 - `DEEPCOBOT_LOG_LEVEL`: Log level (DEBUG, INFO, WARNING, ERROR)
 - `DEEPCOBOT_LOG_JSON`: Use JSON format logs (true/false)
 

@@ -97,7 +97,7 @@ def apply_config(config: "Config") -> None:
     """
     应用配置到运行时环境。
 
-    包括日志配置和 LangSmith 配置。
+    包括日志配置和 LangSmith/Langfuse 配置。
 
     Args:
         config: 配置对象
@@ -122,6 +122,17 @@ def apply_config(config: "Config") -> None:
             os.environ["LANGSMITH_API_KEY"] = config.langsmith.api_key
         if config.langsmith.project:
             os.environ["LANGCHAIN_PROJECT"] = config.langsmith.project
+        logger.info(f"LangSmith tracing enabled: project={config.langsmith.project or 'default'}")
+
+    # 应用 Langfuse 配置（设置环境变量供 LangGraph Server 使用）
+    if config.langfuse.enabled:
+        if config.langfuse.public_key:
+            os.environ["LANGFUSE_PUBLIC_KEY"] = config.langfuse.public_key
+        if config.langfuse.secret_key:
+            os.environ["LANGFUSE_SECRET_KEY"] = config.langfuse.secret_key
+        if config.langfuse.base_url:
+            os.environ["LANGFUSE_HOST"] = config.langfuse.base_url
+        logger.info(f"Langfuse tracing enabled: base_url={config.langfuse.base_url or 'https://cloud.langfuse.com'}")
 
     logger.info(f"DeepCoBot v{__version__} initialized")
     if log_file:

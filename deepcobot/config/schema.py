@@ -112,7 +112,7 @@ class AgentDefaults(BaseModel):
     )
     max_tokens: int = Field(default=8192, description="最大输出 token 数")
     recursion_limit: int = Field(
-        default=50,
+        default=100,
         description="Agent 执行的最大递归深度（防止无限循环）",
     )
     system_prompt: str | None = Field(None, description="自定义系统提示词")
@@ -122,6 +122,10 @@ class AgentDefaults(BaseModel):
         default=True, description="是否启用手动压缩对话工具 (compact_conversation)"
     )
     auto_approve: bool = Field(default=False, description="是否自动审批工具调用")
+    show_progress: bool = Field(
+        default=False,
+        description="Bot 模式下是否显示工具调用等中间过程（可能产生较多消息）",
+    )
 
     @field_validator("workspace", mode="before")
     @classmethod
@@ -265,6 +269,19 @@ class LangSmithConfig(BaseModel):
     project: str | None = Field(default=None, description="LangSmith 项目名称")
 
 
+class LangfuseConfig(BaseModel):
+    """Langfuse 配置"""
+
+    enabled: bool = Field(default=False, description="是否启用 Langfuse tracing")
+    public_key: str | None = Field(default=None, description="Langfuse 公钥 (格式: pk-...)")
+    secret_key: str | None = Field(default=None, description="Langfuse 私钥 (格式: sk-...)")
+    base_url: str | None = Field(
+        default=None,
+        description="Langfuse 服务地址，默认为 https://cloud.langfuse.com",
+    )
+    project: str | None = Field(default=None, description="Langfuse 项目名称（可选）")
+
+
 class Config(BaseModel):
     """完整配置"""
 
@@ -282,6 +299,7 @@ class Config(BaseModel):
     services: ServicesConfig = Field(default_factory=ServicesConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     langsmith: LangSmithConfig = Field(default_factory=LangSmithConfig)
+    langfuse: LangfuseConfig = Field(default_factory=LangfuseConfig)
     mcp: MCPConfig = Field(default_factory=MCPConfig)
 
     model_config = {

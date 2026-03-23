@@ -437,6 +437,43 @@ deepcobot serve --port 8123
 # 打开输出中显示的 Studio UI 链接
 ```
 
+### Langfuse 追踪
+
+[Langfuse](https://langfuse.com/) 是 LangSmith 的开源替代方案，用于追踪和调试 LLM 应用。DeepCoBot 支持 Langfuse 集成。
+
+**安装 Langfuse 支持：**
+
+```bash
+pip install deepcobot[langfuse]
+```
+
+**启用 Langfuse 追踪：**
+
+```toml
+[langfuse]
+enabled = true
+public_key = "${LANGFUSE_PUBLIC_KEY}"
+secret_key = "${LANGFUSE_SECRET_KEY}"
+base_url = "${LANGFUSE_BASE_URL}"  # 可选，默认为 https://cloud.langfuse.com
+```
+
+**或通过环境变量：**
+
+```bash
+export LANGFUSE_PUBLIC_KEY="pk-xxx"
+export LANGFUSE_SECRET_KEY="sk-xxx"
+export LANGFUSE_BASE_URL="https://cloud.langfuse.com"  # 可选
+```
+
+**Langfuse 的优势：**
+
+- **开源**：可自托管或使用云版本
+- **隐私控制**：数据保存在你自己的基础设施上
+- **功能对等**：与 LangSmith 类似的追踪能力
+- **经济实惠**：免费的自托管选项
+
+**注意：** LangSmith 和 Langfuse 不应同时启用，请选择一个追踪后端。
+
 ### 结构化日志
 
 配置生产环境的日志输出：
@@ -466,6 +503,9 @@ export DEEPCOBOT_LOG_JSON="true"
 - `FEISHU_APP_ID`: 飞书 App ID
 - `FEISHU_APP_SECRET`: 飞书 App Secret
 - `LANGSMITH_API_KEY`: LangSmith API 密钥用于追踪（可选）
+- `LANGFUSE_PUBLIC_KEY`: Langfuse 公钥用于追踪（可选）
+- `LANGFUSE_SECRET_KEY`: Langfuse 私钥用于追踪（可选）
+- `LANGFUSE_BASE_URL`: Langfuse 服务地址（可选）
 - `DEEPCOBOT_LOG_LEVEL`: 日志级别 (DEBUG, INFO, WARNING, ERROR)
 - `DEEPCOBOT_LOG_JSON`: 使用 JSON 格式日志 (true/false)
 
