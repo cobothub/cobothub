@@ -77,11 +77,23 @@ class CronJob:
             except (ValueError, TypeError):
                 return None
 
+        # 处理 schedule 字段：支持字符串和 dict 两种格式
+        schedule = data.get("schedule", "1h")
+        if isinstance(schedule, dict):
+            # 旧格式: {"type": "cron", "expression": "..."} 或 {"type": "every", "interval": "..."}
+            if schedule.get("type") == "cron" and "expression" in schedule:
+                schedule = schedule["expression"]
+            elif schedule.get("type") == "every" and "interval" in schedule:
+                schedule = schedule["interval"]
+            else:
+                # 无法识别的 dict 格式，使用默认值
+                schedule = "1h"
+
         return cls(
             id=data["id"],
             name=data["name"],
             enabled=data.get("enabled", True),
-            schedule=data.get("schedule", "1h"),
+            schedule=schedule,
             message=data.get("message", ""),
             channel=data.get("channel"),
             chat_id=data.get("chat_id"),
